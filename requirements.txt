@@ -1,0 +1,6 @@
+dash==2.11.1
+dash-canvas==0.1.0
+numpy==1.24.3
+Pillow==10.0.0
+torch==2.0.1
+opencv-python==4.7.0.72
