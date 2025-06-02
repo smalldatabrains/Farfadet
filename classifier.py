@@ -1,37 +1,58 @@
+## Pytorch file for website article
+
 import torch
+from torch import nn
+from torch.utils.tensorboard import SummaryWriter
+writer=SummaryWriter(log_dir='runs/farfadet')
 
-class Classifier():
+
+class SimpleNet(nn.Module):
     def __init__(self):
-        self.x = torch.rand(100, 1, requires_grad=True)
-        self.noise = torch.rand(100,1)*0.1
-        self.targets = 2*self.x+1+self.noise
+        super(SimpleNet,self).__init__()
+        self.fc1=nn.Linear(4,5)
+        self.relu=nn.ReLU()
+        self.fc2=nn.Linear(5,3)
 
-    def add_ten(self, tensor):
-        return tensor + 10
-
-    def divide_two(self, tensor):
-        return tensor * 0.5
-
-    def polynome(self, tensor,noise):
-        return 2 * tensor + 1 + noise
-
-    def printTensor(self, tensor):
-        print(tensor)
-        print(self.x.grad)
-
-    def gradient(self, tensor):
-        tensor.backward(torch.ones_like(tensor))
+    def forward(self,x):
+        x=self.fc1(x)
+        x=self.relu(x)
+        x=self.fc2(x)
+        return x
     
-    def MSELoss(self, predictions, targets):
-        return torch.mean((predictions - targets) ** 2)
-
-if __name__ == "__main__":
-    y = Classifier()
-    z = y.add_ten(y.x)
-    z = y.divide_two(z)
-    p = y.polynome(z, y.noise)
+    def lossfunction(self,y,target): # we usually do not put the loss and optimizer in the class but in the main loop
+        criterion=nn.CrossEntropyLoss() #do not apply softmax berfore feeding output to crossEntropy, targets must be classes (not one encoded)
+        loss=criterion(y,target)
+        return loss
     
-    loss = y.MSELoss(p,y.targets)
-    y.gradient(loss)
-    y.printTensor(z)
-    print("Loss:", loss.item())
+    def train(self, x, target, num_epochs=10, lr=0.01):
+        optimizer = torch.optim.SGD(self.parameters(),lr=lr)
+        self.train #set the model to training mode, self.eval() set the model to evaluation mode
+        running_loss=0.0
+        running_accuracy=0.0
+        for epoch in range(num_epochs):
+            optimizer.zero_grad()
+            output=self.forward(x)
+            loss=self.lossfunction(output,target)
+            loss.backward()
+            optimizer.step()
+
+            print("Epoch", epoch, num_epochs,"Loss", loss.item())
+
+if __name__ == '__main__':
+    model=SimpleNet()
+    x=torch.rand((4,4)) #num examples, num features
+    target=torch.tensor([0,1,1,0]) #4 labels
+    response=model.forward(x)
+    print(response)
+    loss=model.lossfunction(response,target)
+    print(loss)
+    model.train(x,target,num_epochs=10)
+
+
+### WAY FORWARD ###
+## Add accuracy tracking (go tensorboard), update training loop to print accuracy for each epoch
+## Add validation (split dataset)
+## Use Dataloader
+## Use sotfmax output (probabilities add to one)
+
+
