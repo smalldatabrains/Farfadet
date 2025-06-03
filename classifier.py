@@ -1,7 +1,14 @@
 ## Pytorch file for website article
 
+# Basic import
 import torch
 from torch import nn
+
+# Dataloader
+
+# Loss and optimizer
+
+# Tensorboard
 from torch.utils.tensorboard import SummaryWriter
 writer=SummaryWriter(log_dir='runs')
 
@@ -43,17 +50,29 @@ class ConvNet(nn.Module):
     def __init__(self):
         super(ConvNet,self).__init__()
         self.model = nn.Sequential(
-
+            nn.Conv2d(in_channels=3,out_channels=24,kernel_size=3,stride=1,padding=2),
+            nn.ReLU()
         )
     
     def forward(self,x):
         return self.model(x)
 
     def lossfunction(self, y, target):
-        pass
+        criterion=nn.CrossEntropyLoss()
+        loss=criterion(y,target)
+        return loss
 
     def train_model(self, x, target, num_epochs=10, lr=0.01):
-        pass
+        optimizer= torch.optim.Adam(self.parameters(),lr=lr)
+        self.train #set train mode
+        for epoch in num_epochs:
+            optimizer.zero_grad() #what does this do?
+            output=self.model(x)
+            loss=self.lossfunction(output,target)
+            loss.backward()
+            optimizer.step()
+
+            print("Epoch", epoch, num_epochs,"Loss", loss.item())
 
 
     
