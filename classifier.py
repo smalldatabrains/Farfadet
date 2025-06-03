@@ -3,7 +3,7 @@
 import torch
 from torch import nn
 from torch.utils.tensorboard import SummaryWriter
-writer=SummaryWriter(log_dir='runs/farfadet')
+writer=SummaryWriter(log_dir='runs')
 
 
 class SimpleNet(nn.Module):
@@ -24,7 +24,7 @@ class SimpleNet(nn.Module):
         loss=criterion(y,target)
         return loss
     
-    def train(self, x, target, num_epochs=10, lr=0.01):
+    def train_model(self, x, target, num_epochs=10, lr=0.01):
         optimizer = torch.optim.SGD(self.parameters(),lr=lr)
         self.train #set the model to training mode, self.eval() set the model to evaluation mode
         running_loss=0.0
@@ -33,10 +33,30 @@ class SimpleNet(nn.Module):
             optimizer.zero_grad()
             output=self.forward(x)
             loss=self.lossfunction(output,target)
+            writer.add_scalar("Loss/train", loss)
             loss.backward()
             optimizer.step()
 
             print("Epoch", epoch, num_epochs,"Loss", loss.item())
+
+class ConvNet(nn.Module):
+    def __init__(self):
+        super(ConvNet,self).__init__()
+        self.model = nn.Sequential(
+
+        )
+    
+    def forward(self,x):
+        return self.model(x)
+
+    def lossfunction(self, y, target):
+        pass
+
+    def train_model(self, x, target, num_epochs=10, lr=0.01):
+        pass
+
+
+    
 
 if __name__ == '__main__':
     model=SimpleNet()
@@ -46,7 +66,7 @@ if __name__ == '__main__':
     print(response)
     loss=model.lossfunction(response,target)
     print(loss)
-    model.train(x,target,num_epochs=10)
+    model.train_model(x,target,num_epochs=10)
 
 
 ### WAY FORWARD ###
