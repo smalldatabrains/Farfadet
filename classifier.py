@@ -33,7 +33,7 @@ class SimpleNet(nn.Module):
             optimizer.zero_grad()
             output=self.forward(x)
             loss=self.lossfunction(output,target)
-            writer.add_scalar("Loss/train", loss)
+            writer.add_scalar("Loss/train", loss.item(),epoch)
             loss.backward()
             optimizer.step()
 
