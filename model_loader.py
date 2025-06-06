@@ -13,5 +13,3 @@ model = nn.Sequential(
     nn.Flatten(),
     nn.Linear(10*14*14,10)
 )
-
-model.

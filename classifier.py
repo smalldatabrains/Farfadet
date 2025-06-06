@@ -4,9 +4,8 @@
 import torch
 from torch import nn
 import datetime
-import pandas as pd
 import os
-from PIL import Image
+
 
 # Tensorboard
 from torch.utils.tensorboard import SummaryWriter ## criter for tensorboard
@@ -43,7 +42,7 @@ class SimpleNet(nn.Module):
     
     def train_model(self, x, target, num_epochs=10, lr=0.01):
         optimizer = torch.optim.SGD(self.parameters(),lr=lr)
-        self.train #set the model to training mode, self.eval() set the model to evaluation mode
+        self.train() #set the model to training mode, self.eval() set the model to evaluation mode
         running_loss=0.0
         running_accuracy=0.0
         for epoch in range(num_epochs):
@@ -60,13 +59,13 @@ class ConvNet(nn.Module):
     def __init__(self):
         super(ConvNet,self).__init__()
         self.conv_block = nn.Sequential(
-            nn.Conv2d(in_channels=3,out_channels=24,kernel_size=3,stride=1,padding=2),
+            nn.Conv2d(in_channels=1,out_channels=24,kernel_size=3,stride=1,padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2,2)
         )
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(10*14*14,10)
+            nn.Linear(24*14*14,10)
         )
         
         self.device='cuda' if torch.cuda.is_available() else 'cpu'
@@ -97,18 +96,18 @@ class ConvNet(nn.Module):
         return loss
 
     def train_model(self, num_epochs=10, lr=0.01):
-        writer=SummaryWriter(log_dir='runs\chenapan'+datetime.datetime.today().strftime('%Y-%m-%d'))
+        writer=SummaryWriter(log_dir=r'runs\chenapan'+datetime.datetime.today().strftime('%Y-%m-%d'))
         dataloader=DataLoader(self.train_dataset,batch_size=64, shuffle=True)
         dataloader_validation=DataLoader(self.validation_dataset,batch_size=64)       
         optimizer= torch.optim.Adam(self.parameters(),lr=lr) #self.parameters reefers to the whole list of parameters of the model
         device=self.device
         self=self.to(device=device)
-        for epoch in num_epochs:
+        for epoch in range(num_epochs):
             self.train() #set to train mode
             for batch_id, (inputs,labels) in enumerate(dataloader):
                 inputs,labels=inputs.to(device), labels.to(device)
                 optimizer.zero_grad() #reset gradient to zero
-                output, feature_map=self.forward(x)
+                output, feature_map=self.forward(inputs)
                 loss=self.lossfunction(output,labels)
                 loss.backward()
                 optimizer.step()
@@ -125,6 +124,7 @@ class ConvNet(nn.Module):
             self.eval()
             with torch.no_grad():
                 for val_inputs, val_labels in dataloader_validation:
+                    val_inputs, val_labels = val_inputs.to(device), val_labels.to(device)
                     val_outputs, val_feature_map=self.forward(val_inputs)
                     loss_val=self.lossfunction(val_outputs, val_labels)
 
