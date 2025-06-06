@@ -124,7 +124,7 @@ class ConvNet(nn.Module):
             #validation phase
             self.eval()
             with torch.no_grad():
-                for val_inputs, val_labels in enumerate(dataloader_validation):
+                for val_inputs, val_labels in dataloader_validation:
                     val_outputs, val_feature_map=self.forward(val_inputs)
                     loss_val=self.lossfunction(val_outputs, val_labels)
 
