@@ -1,6 +1,6 @@
 import cv2 as cv
 import torch.nn as nn
-from classifier import ConvNet #from training file classifier.py
+from model_training import ConvNet #from training file classifier.py
 
 class LoadModel(nn.Module):
     """

@@ -2,7 +2,7 @@
 import torch
 from torch import nn
 from torch.utils.tensorboard import SummaryWriter
-from classifier import ConvNet
+from model_training import ConvNet
 
 model = ConvNet()
 model.load_state_dict(torch.load("ConvNet.pth"))

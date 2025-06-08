@@ -15,3 +15,8 @@ UNET segmentation + inference on videos
 4. Reconstruct the whole frame
 5. Display frame result as a layer on the video
 6. Build a GUI around the results
+
+## TODO
+
+0. Dockerize everything
+1. Load Corrobot dataset in model and train on it
