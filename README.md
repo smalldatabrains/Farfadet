@@ -11,6 +11,7 @@ UNET segmentation + inference on videos
 0. Train 2 models : simple classifier (Corrosion : Yes / NO) and a UNET segmentation mask using the dataset above
 1. Load video
 2. Cut each frame in smaller part
+![alt text](image.png)
 3. Apply segmentation on small part
 4. Reconstruct the whole frame
 5. Display frame result as a layer on the video

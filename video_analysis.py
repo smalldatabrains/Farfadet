@@ -39,12 +39,21 @@ class VideoLoader ():
 
     def read_video(self):
         capture = cv.VideoCapture(self.path)
+        if not capture.isOpened():
+            print("Error opening video")
+            return None
+        
         while True:
             ret, frame = capture.read()
-            cv.imshow('Input',frame)
+            if not ret:
+                break
 
             resized_frame = cv.resize(frame,(self.WIDTH, self.HEIGHT))
+            patches=self.cut_frame(resized_frame)
             cv.imshow('Resized frame', resized_frame)
+
+            for id,patch in enumerate(patches):
+                cv.imshow('Patch'+str(id), patch)
 
             keyboard=cv.waitKey(30)
             if keyboard == ord('q') or keyboard == 27:
@@ -63,7 +72,7 @@ class VideoLoader ():
         for y in range(0, frame.shape[0],small_frame_height):
             for x in range(0, frame.shape[1], small_frame_width):
                 patch = frame[y:y+small_frame_height,x:x+small_frame_width]
-                if patch.shape[0] == 100 and patch.shapes[1] == 100:
+                if patch.shape[0] == small_frame_height and patch.shape[1] == small_frame_width:
                     patches.append(patch)
 
         return patches
