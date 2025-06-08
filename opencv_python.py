@@ -1,30 +1,18 @@
 import cv2 as cv
 import torch.nn as nn
+from classifier import ConvNet #from training file classifier.py
 
-class BuildModel(nn.Module):
+class LoadModel(nn.Module):
     """
-    A class to train and detect buildings on a video
+    A class to load a model and apply inference on a frame
     """
     def __init__(self,path):
-        super(BuildModel,self).__init__()
-        self.dataset_path=path
-        self.model = nn.Sequential(
-            nn.Conv2d(),
-            nn.MaxPool2d(),
-            nn.Conv2d(),
-            nn.MaxPool2d(),
-            nn.Linear(),
-            nn.ReLU()
-        )
-
+        super(LoadModel,self).__init__()
+        self.model=ConvNet()
+        self.load_state_dict(state_dict='ConvNet.pth') #load weights and parameters
+        self.eval() #evalutation mode of the model for inference
     def forward(self, frame):
-        return self.model(frame)    
-    
-    def train_model(self):
-        self.train()
-
-
-
+        return self.model(frame) #this return a mask
 
 class VideoLoader ():
     """
@@ -55,6 +43,9 @@ class VideoLoader ():
                 break
         capture.release()
         cv.destroyAllWindows()
+
+    def inference(self, frame):
+        pass
 
     def save_output(self):
         """
