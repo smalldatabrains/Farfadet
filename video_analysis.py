@@ -1,18 +1,23 @@
 import cv2 as cv
 import torch.nn as nn
-from model_training import ConvNet #from training file classifier.py
+from model_training import ConvNet, SimpleNet #from training file classifier.py
 
-class LoadModel(nn.Module):
+class ModelLoader(nn.Module):
     """
-    A class to load a model and apply inference on a frame
+    A class to load a segmentation model and apply inference on a frame
     """
     def __init__(self,path):
-        super(LoadModel,self).__init__()
-        self.model=ConvNet()
-        self.load_state_dict(state_dict='ConvNet.pth') #load weights and parameters
+        super(ModelLoader,self).__init__()
+
+        self.classifier= SimpleNet() # simple classifier
+        self.load_state_dict(state_dict='SimpleNet.pth') #load previously trained model weights and parameters
+
+        self.model=ConvNet() # segmentation model
+        self.load_state_dict(state_dict='UNET.pth') #load previsouly trained model weights and parameters
         self.eval() #evalutation mode of the model for inference
+
     def forward(self, frame):
-        return self.model(frame) #this return a mask
+        return self.classifer(frame), self.model(frame) #this return a mask
 
 class VideoLoader ():
     """
@@ -38,18 +43,41 @@ class VideoLoader ():
             ret, frame = capture.read()
             cv.imshow('Input',frame)
 
+            resized_frame = cv.resize(frame,(self.WIDTH, self.HEIGHT))
+            cv.imshow('Resized frame', resized_frame)
+
             keyboard=cv.waitKey(30)
-            if keyboard =='q' or keyboard == 27:
+            if keyboard == ord('q') or keyboard == 27:
                 break
         capture.release()
         cv.destroyAllWindows()
 
-    def inference(self, frame):
-        pass
-
-    def save_output(self):
+    def cut_frame(self,frame):
         """
-        Save output video to local disk
+        Return a list of small images patches 100x100 from an HD frame to be sent next to the model
+        """
+        patches=[]
+        small_frame_height=100
+        small_frame_width=100
+        
+        for y in range(0, frame.shape[0],small_frame_height):
+            for x in range(0, frame.shape[1], small_frame_width):
+                patch = frame[y:y+small_frame_height,x:x+small_frame_width]
+                if patch.shape[0] == 100 and patch.shapes[1] == 100:
+                    patches.append(patch)
+
+        return patches
+
+    def inference(self, frame):
+        """
+        Return segmentation mask and some metrics
+        """
+        return self.model(frame)
+        
+
+    def save_measurements(self):
+        """
+        Save some key metrics after analysis
         """
         pass
 
