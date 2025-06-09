@@ -12,6 +12,8 @@ UNET segmentation + inference on videos
 Tensorboard monitoring messed up to be fixed
 ![alt text](image-3.png)
 0. bis Improve model performance
+Here a snippet of how the model performs currently
+![alt text](image-4.png)
 1. Load video
 2. Cut each frame in smaller part
 ![alt text](image.png)
