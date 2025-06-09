@@ -2,6 +2,8 @@
 
 Developed competences : UNET architecture, pytorch (train, save, load, optimize, monitor with tensorboard), opencv, computing at scale on HD videos
 
+For the moment the UNET model is a look alike UNET model. It does not convey information between the encoder and decoder layers. It should be tried to improve model performance.
+
 ## Ideation
 UNET segmentation + inference on videos
 
@@ -19,9 +21,7 @@ Here a snippet of how the model performs currently
 ![alt text](image.png)
 3. Apply segmentation on small part
 
-![alt text](Animation.gif)
-
-It's buggy here, maybe because I am applying the model on too small images? or check model loading and inference in video_analysis.py
+![alt text](<Corrosion Dectection.gif>)
 
 4. Reconstruct the whole frame
 5. Display frame result as a layer on the video

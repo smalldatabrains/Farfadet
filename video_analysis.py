@@ -15,8 +15,8 @@ class ModelLoader(nn.Module):
 
         self.model= ConvNet(num_classes=3) # simple classifier
         self.model.load_state_dict(torch.load(path)) #load previously trained model weights and parameters
+        self.eval() # eval mode to speed up the process
         self.transform = transforms.Compose([
-            transforms.ToPILImage(),
             transforms.Resize((256, 256)),
             transforms.ToTensor(),
         ])
@@ -25,11 +25,10 @@ class ModelLoader(nn.Module):
         # Preprocess
         input_tensor = self.transform(frame).unsqueeze(0)  # [1, 3, 256, 256]
         with torch.no_grad():
-            output = self.model(input_tensor)[0]  # shape: [1, 3, 256, 256]
-            predicted_mask = torch.argmax(output, dim=1).squeeze(0)  # [256, 256]
-            predicted_mask = F.interpolate(predicted_mask.unsqueeze(0).unsqueeze(0).float(),
-                                           size=(100, 100), mode='nearest')  # back to patch size
-            predicted_mask = predicted_mask.squeeze().byte().cpu().numpy()  # [100, 100]
+            output = self.model(input_tensor)  # shape: [1, 3, 256, 256]
+            predicted_mask = torch.argmax(output, dim=1, keepdim=True).float()  # [256, 256]
+            predicted_mask = F.interpolate(predicted_mask,size=(320, 320), mode='nearest')  # back to patch size
+            predicted_mask = predicted_mask.squeeze().long()  # [H, W]
         return predicted_mask
 
 class VideoLoader ():
@@ -47,8 +46,8 @@ class VideoLoader ():
         self.path=path
         self.output_folder='.\\data\\videos\\outputs'
         self.mode = 'inference'
-        self.HEIGHT=400
-        self.WIDTH=600
+        self.HEIGHT=1540
+        self.WIDTH=2560
         self.model=ModelLoader()
 
     def read_video(self):
@@ -67,11 +66,15 @@ class VideoLoader ():
 
 
             for id,patch in enumerate(patches):
-                predicted_mask = self.model(patch)
+                pil_patch=Image.fromarray(cv.cvtColor(patch, cv.COLOR_BGR2RGB))
+                predicted_mask = self.model(pil_patch)
+                mask_np=predicted_mask.cpu().numpy().astype('uint8')*80
+                # print(predicted_mask.shape)
                 # Display side by side
-                color_mask = cv.applyColorMap(predicted_mask, cv.COLORMAP_JET)
-                stacked = cv.hconcat([patch, color_mask])
-                cv.imshow(f'Patch {id}', stacked)
+                color_mask = cv.applyColorMap(mask_np, cv.COLORMAP_JET)
+                if id == 9 or id == 16:
+                    cv.imshow(f'Patch {id}', patch)
+                    cv.imshow(f'Mask {id}',color_mask)
 
             keyboard=cv.waitKey(30)
             if keyboard == ord('q') or keyboard == 27:
@@ -84,8 +87,8 @@ class VideoLoader ():
         Return a list of small images patches 100x100 from an HD frame to be sent next to the model
         """
         patches=[]
-        small_frame_height=100
-        small_frame_width=100
+        small_frame_height=320
+        small_frame_width=320
         
         for y in range(0, frame.shape[0],small_frame_height):
             for x in range(0, frame.shape[1], small_frame_width):
@@ -111,7 +114,7 @@ class VideoLoader ():
 
 
 if __name__ == '__main__':
-    video=VideoLoader('.\\data\\videos\\13175373-uhd_3840_2160_30fps.mp4')
+    video=VideoLoader('.\\data\\videos\\4721836-hd_1920_1080_30fps.mp4')
     video.read_video()
     
 
