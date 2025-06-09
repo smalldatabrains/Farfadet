@@ -18,11 +18,14 @@ Here a snippet of how the model performs currently
 2. Cut each frame in smaller part
 ![alt text](image.png)
 3. Apply segmentation on small part
+![alt text](Animation.gif)
+It's buggy here, maybe because I am applying the model on too small images? or check model loading and inference in video_analysis.py
 4. Reconstruct the whole frame
 5. Display frame result as a layer on the video
 6. Build a GUI around the results
+7. Reconstrust a 3D Model
 
 ## TODO
 
 0. Dockerize everything
-1. Load Corrobot dataset in model and train on it
+
