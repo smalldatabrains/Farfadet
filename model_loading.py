@@ -43,7 +43,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
 
-    image_tensor, original_image, original_size = load_image("data\\corrobot.v2i.coco-segmentation\\valid\\rust-108_jpg.rf.e31ced685191f851002e61de69b28902.jpg")
+    image_tensor, original_image, original_size = load_image("data\\corrobot.v2i.coco-segmentation\\valid\\S7_jpg.rf.7895a4a6f52b6beb3a1ec20e09f50cb2.jpg")
     image_tensor = image_tensor.to(device)
 
     with torch.no_grad():
