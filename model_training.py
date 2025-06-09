@@ -80,7 +80,7 @@ class SimpleNet(nn.Module):
         loss=criterion(y,target)
         return loss
     
-    def train_model(self, x, target, num_epochs=10, lr=0.01):
+    def train_model(self, x, target, num_epochs=150, lr=0.01):
         optimizer = torch.optim.SGD(self.parameters(),lr=lr)
         self.train() #set the model to training mode, self.eval() set the model to evaluation mode
         running_loss=0.0
@@ -97,7 +97,7 @@ class SimpleNet(nn.Module):
 
 class ConvNet(nn.Module):
     """
-    UNET like architecture model
+    UNET like architecture model without bridges between encoder and decoder
     """
     def __init__(self, num_classes, train_dataset=None, validation_dataset=None):
         super(ConvNet, self).__init__()
@@ -135,11 +135,11 @@ class ConvNet(nn.Module):
         loss=criterion(y,target)
         return loss
 
-    def train_model(self, num_epochs=10, lr=0.01):
+    def train_model(self, num_epochs=150, lr=0.01):
         writer=SummaryWriter(log_dir=r'runs\segmentation'+datetime.datetime.today().strftime('%Y-%m-%d'))
         
-        dataloader=DataLoader(self.train_dataset,batch_size=8, shuffle=True)
-        dataloader_validation=DataLoader(self.validation_dataset,batch_size=8)       
+        dataloader=DataLoader(self.train_dataset,batch_size=32, shuffle=True)
+        dataloader_validation=DataLoader(self.validation_dataset,batch_size=32)       
         
         optimizer= torch.optim.Adam(self.parameters(),lr=lr) #self.parameters reefers to the whole list of parameters of the model
         criterion = nn.CrossEntropyLoss()

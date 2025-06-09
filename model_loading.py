@@ -6,14 +6,16 @@ from model_training import ConvNet
 
 def load_model():
     model = ConvNet()
-    model.load_state_dict(torch.load("UNET.pth"))
+    model.load_state_dict(torch.load("ConvNet.pth"))
 
     model.eval()
 
-    dummy_input = torch.randn(1,1,28,28)
+    dummy_input = torch.randn(1,1,256,256)
 
     writer = SummaryWriter('runs/model_architecture')
     writer.add_graph(model,dummy_input)
     writer.close()
 
-    return model 
+    return model
+
+load_model()
