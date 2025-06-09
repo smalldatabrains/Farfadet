@@ -97,18 +97,26 @@ class SimpleNet(nn.Module):
 
 class ConvNet(nn.Module):
     """
-    UNET architecture (to be rewritten)
+    UNET like architecture model
     """
-    def __init__(self, train_dataset=None, validation_dataset=None):
-        super(ConvNet,self).__init__()
-        self.conv_block = nn.Sequential(
-            nn.Conv2d(in_channels=3,out_channels=24,kernel_size=3,stride=1,padding=1),
+    def __init__(self, num_classes, train_dataset=None, validation_dataset=None):
+        super(ConvNet, self).__init__()
+
+        # Encoder
+        self.encoder = nn.Sequential(
+            nn.Conv2d(3, 16, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(2,2)
+            nn.MaxPool2d(2),  # 640 -> 320
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),  # 320 -> 160
         )
-        self.classifier = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(24*320*320,10)
+
+        # Decoder
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(32, 16, kernel_size=2, stride=2),  # 160 -> 320
+            nn.ReLU(),
+            nn.ConvTranspose2d(16, num_classes, kernel_size=2, stride=2),  # 320 -> 640
         )
         
         self.device='cuda' if torch.cuda.is_available() else 'cpu'
@@ -117,10 +125,10 @@ class ConvNet(nn.Module):
 
 
 
-    def forward(self,x):
-        feature_map=self.conv_block(x)
-        output = self.classifier(feature_map)
-        return output, feature_map
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.decoder(x)
+        return x  # Shape: [B, num_classes, 640, 640]
 
     def lossfunction(self, y, target):
         criterion=nn.CrossEntropyLoss()
@@ -128,37 +136,38 @@ class ConvNet(nn.Module):
         return loss
 
     def train_model(self, num_epochs=10, lr=0.01):
-        writer=SummaryWriter(log_dir=r'runs\chenapan'+datetime.datetime.today().strftime('%Y-%m-%d'))
-        dataloader=DataLoader(self.train_dataset,batch_size=64, shuffle=True)
-        dataloader_validation=DataLoader(self.validation_dataset,batch_size=64)       
+        writer=SummaryWriter(log_dir=r'runs\segmentation'+datetime.datetime.today().strftime('%Y-%m-%d'))
+        
+        dataloader=DataLoader(self.train_dataset,batch_size=8, shuffle=True)
+        dataloader_validation=DataLoader(self.validation_dataset,batch_size=8)       
+        
         optimizer= torch.optim.Adam(self.parameters(),lr=lr) #self.parameters reefers to the whole list of parameters of the model
+        criterion = nn.CrossEntropyLoss()
+        # loading tensor into GPU is available
         device=self.device
         self=self.to(device=device)
+        
         for epoch in range(num_epochs):
             self.train() #set to train mode
-            for batch_id, (inputs,labels) in enumerate(dataloader):
-                inputs,labels=inputs.to(device), labels.to(device)
+
+            for batch_id, (images,masks) in enumerate(dataloader):
+                images,masks=images.to(device), masks.to(device)
                 optimizer.zero_grad() #reset gradient to zero
-                output, feature_map=self.forward(inputs)
-                loss=self.lossfunction(output,labels)
+                outputs=self.forward(images)
+                loss=self.lossfunction(outputs,masks)
                 loss.backward()
                 optimizer.step()
 
                 writer.add_scalar("Loss/train", loss.item(), epoch)
 
-                if batch_id==0:
-                    fmap=feature_map[0]
-                    fmap=fmap.unsqueeze(1)
-                    grid=vutils.make_grid(fmap, normalize=True, scale_each=True, nrow=5)
-                    writer.add_image("Feature map", grid, global_step=epoch)
 
             #validation phase
             self.eval()
             with torch.no_grad():
-                for val_inputs, val_labels in dataloader_validation:
-                    val_inputs, val_labels = val_inputs.to(device), val_labels.to(device)
-                    val_outputs, val_feature_map=self.forward(val_inputs)
-                    loss_val=self.lossfunction(val_outputs, val_labels)
+                for val_images, val_masks in dataloader_validation:
+                    val_images, val_masks = val_images.to(device), val_masks.to(device)
+                    val_outputs=self.forward(val_images)
+                    loss_val=self.lossfunction(val_outputs, val_masks)
 
             writer.add_scalar("Loss/val",loss_val.item(),epoch)
 
@@ -168,15 +177,15 @@ class ConvNet(nn.Module):
         torch.save(self.state_dict(),"ConvNet.pth")
 
 if __name__ == '__main__':
-
+    NUM_CLASSES = len(COCO('data\\corrobot.v2i.coco-segmentation\\train\\_annotations.coco.json').getCatIds()) + 1
     transform = transforms.Compose([
     transforms.Resize((256, 256)),
     transforms.ToTensor()
     ])
 
     target_transform = transforms.Compose([
-        transforms.Resize((256, 256), interpolation=Image.NEAREST),
-        transforms.ToTensor()
+    transforms.Resize((256, 256), interpolation=Image.NEAREST),
+    transforms.Lambda(lambda x: torch.from_numpy(np.array(x)).long())
     ])
 
     train_dataset = CocoLoader(
@@ -200,7 +209,7 @@ if __name__ == '__main__':
         print(images.shape, masks.shape)
         break
 
-    convolutionModel=ConvNet(train_dataset=train_dataset, validation_dataset=validation_dataset)
+    convolutionModel=ConvNet(num_classes=2,train_dataset=train_dataset, validation_dataset=validation_dataset)
     convolutionModel.train_model()
     convolutionModel.save_model()
 
