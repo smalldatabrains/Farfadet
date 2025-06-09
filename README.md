@@ -1,4 +1,4 @@
-#Farfadet
+# Farfadet
 
 Developed competences : UNET architecture, pytorch (train, save, load, optimize, monitor with tensorboard), opencv, computing at scale on HD videos
 
