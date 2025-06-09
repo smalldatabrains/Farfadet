@@ -1,28 +1,68 @@
-## Pytorch file for website article
-
 # Basic import
 import torch
 from torch import nn
 import datetime
+import numpy as np
+from PIL import Image
+from pycocotools.coco import COCO # segmentation management in coco
 import os
 
 
 # Tensorboard
 from torch.utils.tensorboard import SummaryWriter ## criter for tensorboard
 import torchvision.utils as vutils ## to visualize feature map
-from torchvision.transforms import ToTensor ## check this function
 
-# Torchaudio
+# Torvision
+from torchvision import transforms
 
 # Dataset and Dataloader
-from torch.utils.data import Dataset
-from torchvision import datasets
+from torch.utils.data import Dataset, DataLoader
 from torch.utils.data import DataLoader
 
 writer=SummaryWriter(log_dir='runs')
 
 
+class CocoLoader(Dataset):
+    def __init__(self,root,annFile, transform=None, target_transform=None):
+        self.root=root
+        self.coco = COCO(annFile)
+        self.image_ids = list(self.coco.imgs.keys())
+        self.transform = transform
+        self.target_transform = target_transform
+    
+    def __len__(self):
+        return len(self.image_ids)
+    
+    def __getitem__(self, index):
+        coco = self.coco
+        img_id = self.image_ids[index]
+        ann_ids = coco.getAnnIds(imgIds=img_id)
+        anns = coco.loadAnns(ann_ids)
+
+        # Load image
+        img_info = coco.loadImgs(img_id)[0]
+        img_path = os.path.join(self.root, img_info['file_name'])
+        image = Image.open(img_path).convert('RGB')
+
+        # Create segmentation mask
+        mask = np.zeros((img_info['height'], img_info['width']), dtype=np.uint8)
+        for ann in anns:
+            mask = np.maximum(mask, coco.annToMask(ann) * ann['category_id'])
+
+        mask = Image.fromarray(mask)
+
+        if self.transform:
+            image = self.transform(image)
+        if self.target_transform:
+            mask = self.target_transform(mask)
+
+        return image, mask
+
+
 class SimpleNet(nn.Module):
+    """
+    Simple classifier uning convolution and linear layer (to be written)
+    """
     def __init__(self):
         super(SimpleNet,self).__init__()
         self.fc1=nn.Linear(4,5)
@@ -56,33 +96,25 @@ class SimpleNet(nn.Module):
             print("Epoch", epoch, num_epochs,"Loss", loss.item())
 
 class ConvNet(nn.Module):
-    def __init__(self):
+    """
+    UNET architecture (to be rewritten)
+    """
+    def __init__(self, train_dataset=None, validation_dataset=None):
         super(ConvNet,self).__init__()
         self.conv_block = nn.Sequential(
-            nn.Conv2d(in_channels=1,out_channels=24,kernel_size=3,stride=1,padding=1),
+            nn.Conv2d(in_channels=3,out_channels=24,kernel_size=3,stride=1,padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2,2)
         )
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(24*14*14,10)
+            nn.Linear(24*320*320,10)
         )
         
         self.device='cuda' if torch.cuda.is_available() else 'cpu'
+        self.train_dataset = train_dataset
+        self.validation_dataset = validation_dataset
 
-        self.train_dataset = datasets.FashionMNIST (
-            root='data', #??
-            train=True,
-            download=True,
-            transform=ToTensor()
-        )
-
-        self.validation_dataset = datasets.FashionMNIST(
-            root='data',
-            train=False,
-            download=True,
-            transform=ToTensor()
-        )
 
 
     def forward(self,x):
@@ -136,15 +168,39 @@ class ConvNet(nn.Module):
         torch.save(self.state_dict(),"ConvNet.pth")
 
 if __name__ == '__main__':
-    #model=SimpleNet()
-    #x=torch.rand((4,4)) #num examples, num features
-    #target=torch.tensor([0,1,1,0]) #4 labels
-    #response=model.forward(x)
-    #print(response)
-    #loss=model.lossfunction(response,target)
-    #print(loss)
-    #model.train_model(x,target,num_epochs=10)
-    convolutionModel=ConvNet()
+
+    transform = transforms.Compose([
+    transforms.Resize((256, 256)),
+    transforms.ToTensor()
+    ])
+
+    target_transform = transforms.Compose([
+        transforms.Resize((256, 256), interpolation=Image.NEAREST),
+        transforms.ToTensor()
+    ])
+
+    train_dataset = CocoLoader(
+        root='data\\corrobot.v2i.coco-segmentation\\train',
+        annFile='data\\corrobot.v2i.coco-segmentation\\train\\_annotations.coco.json',
+        transform=transform,
+        target_transform=target_transform
+    )
+
+    validation_dataset = CocoLoader(
+        root='data\\corrobot.v2i.coco-segmentation\\valid',
+        annFile='data\\corrobot.v2i.coco-segmentation\\valid\\_annotations.coco.json',
+        transform=transform,
+        target_transform=target_transform
+    )
+
+    dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=4, shuffle=True)
+
+    # Example usage
+    for images, masks in dataloader:
+        print(images.shape, masks.shape)
+        break
+
+    convolutionModel=ConvNet(train_dataset=train_dataset, validation_dataset=validation_dataset)
     convolutionModel.train_model()
     convolutionModel.save_model()
 
