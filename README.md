@@ -10,7 +10,8 @@ UNET segmentation + inference on videos
 
 0. Train 2 models : simple classifier (Corrosion : Yes / NO) and a UNET segmentation mask using the dataset above
 Tensorboard monitoring messed up to be fixed
-![alt text](image-2.png)
+![alt text](image-3.png)
+0. bis Improve model performance
 1. Load video
 2. Cut each frame in smaller part
 ![alt text](image.png)

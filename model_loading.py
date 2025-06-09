@@ -5,7 +5,7 @@ from torch.utils.tensorboard import SummaryWriter
 from model_training import ConvNet
 
 def load_model():
-    model = ConvNet()
+    model = ConvNet(num_classes=3)
     model.load_state_dict(torch.load("ConvNet.pth"))
 
     model.eval()

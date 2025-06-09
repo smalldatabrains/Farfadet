@@ -80,7 +80,7 @@ class SimpleNet(nn.Module):
         loss=criterion(y,target)
         return loss
     
-    def train_model(self, x, target, num_epochs=150, lr=0.01):
+    def train_model(self, x, target, num_epochs=300, lr=0.01):
         optimizer = torch.optim.SGD(self.parameters(),lr=lr)
         self.train() #set the model to training mode, self.eval() set the model to evaluation mode
         running_loss=0.0
@@ -135,11 +135,11 @@ class ConvNet(nn.Module):
         loss=criterion(y,target)
         return loss
 
-    def train_model(self, num_epochs=150, lr=0.01):
-        writer=SummaryWriter(log_dir=r'runs\segmentation'+datetime.datetime.today().strftime('%Y-%m-%d'))
+    def train_model(self, num_epochs=300, lr=0.01):
+        writer=SummaryWriter(log_dir=r'runs\segmentation'+datetime.datetime.today().strftime('%Y-%m-%d-%h_%H-%M-%S'))
         
-        dataloader=DataLoader(self.train_dataset,batch_size=32, shuffle=True)
-        dataloader_validation=DataLoader(self.validation_dataset,batch_size=32)       
+        dataloader=DataLoader(self.train_dataset,batch_size=64, shuffle=True)
+        dataloader_validation=DataLoader(self.validation_dataset,batch_size=64)       
         
         optimizer= torch.optim.Adam(self.parameters(),lr=lr) #self.parameters reefers to the whole list of parameters of the model
         criterion = nn.CrossEntropyLoss()
@@ -174,10 +174,11 @@ class ConvNet(nn.Module):
             print(f"Epoch {epoch+1}/{num_epochs} | Train Loss {loss:.4f} | Val Loss {loss_val:.4f}")
 
     def save_model(self):
-        torch.save(self.state_dict(),"ConvNet.pth")
+        torch.save(self.state_dict(),"ConvNet1.pth")
 
 if __name__ == '__main__':
     NUM_CLASSES = len(COCO('data\\corrobot.v2i.coco-segmentation\\train\\_annotations.coco.json').getCatIds()) + 1
+    print("NUM_CLASSES : ",NUM_CLASSES)
     transform = transforms.Compose([
     transforms.Resize((256, 256)),
     transforms.ToTensor()
@@ -202,14 +203,14 @@ if __name__ == '__main__':
         target_transform=target_transform
     )
 
-    dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=4, shuffle=True)
+    dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True)
 
     # Example usage
     for images, masks in dataloader:
         print(images.shape, masks.shape)
         break
 
-    convolutionModel=ConvNet(num_classes=2,train_dataset=train_dataset, validation_dataset=validation_dataset)
+    convolutionModel=ConvNet(num_classes=NUM_CLASSES,train_dataset=train_dataset, validation_dataset=validation_dataset)
     convolutionModel.train_model()
     convolutionModel.save_model()
 
