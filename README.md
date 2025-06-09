@@ -22,6 +22,7 @@ Here a snippet of how the model performs currently
 ![alt text](Animation.gif)
 
 It's buggy here, maybe because I am applying the model on too small images? or check model loading and inference in video_analysis.py
+
 4. Reconstruct the whole frame
 5. Display frame result as a layer on the video
 6. Build a GUI around the results
