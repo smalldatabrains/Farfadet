@@ -10,12 +10,12 @@ class ModelLoader(nn.Module):
     """
     A class to load a segmentation model and apply inference on a frame
     """
-    def __init__(self,path="ConvNet1.pth"):
+    def __init__(self,path="ConvNet2.pth"):
         super(ModelLoader,self).__init__()
-
-        self.model= ConvNet(num_classes=3) # simple classifier
-        self.model.load_state_dict(torch.load(path)) #load previously trained model weights and parameters
-        self.eval() # eval mode to speed up the process
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model= ConvNet(num_classes=2).to(self.device) # simple classifier
+        self.model.load_state_dict(torch.load(path, map_location=self.device)) #load previously trained model weights and parameters
+        self.model.eval() # eval mode to speed up the process
         self.transform = transforms.Compose([
             transforms.Resize((256, 256)),
             transforms.ToTensor(),
@@ -23,12 +23,12 @@ class ModelLoader(nn.Module):
 
     def forward(self, frame):
         # Preprocess
-        input_tensor = self.transform(frame).unsqueeze(0)  # [1, 3, 256, 256]
+        input_tensor = self.transform(frame).unsqueeze(0).to(self.device)  # [1, 3, 256, 256]
         with torch.no_grad():
             output = self.model(input_tensor)  # shape: [1, 3, 256, 256]
             predicted_mask = torch.argmax(output, dim=1, keepdim=True).float()  # [256, 256]
             predicted_mask = F.interpolate(predicted_mask,size=(320, 320), mode='nearest')  # back to patch size
-            predicted_mask = predicted_mask.squeeze().long()  # [H, W]
+            predicted_mask = predicted_mask.squeeze().long().cpu()  # [H, W]
         return predicted_mask
 
 class VideoLoader ():

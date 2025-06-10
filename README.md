@@ -37,3 +37,4 @@ Here a snippet of how the model performs currently
 1. Build a GUI around the results
 2. Reconstrust a 3D Model
 3. Try to use Rust for faster inference on video. Possible to load pytorch model in Rust? We may need to retrain the model.
+4. We could use batch of following frames to train a model which would have a memory cell --> Check convLSTM model
