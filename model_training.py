@@ -104,19 +104,24 @@ class ConvNet(nn.Module):
 
         # Encoder
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),  # 640 -> 320
+            nn.Conv2d(3, 16, kernel_size=3, padding=1), #padding =1 keeps the dimension of original image
+            nn.ReLU(), #breaks linearity
+            nn.MaxPool2d(2),  # 640 -> 320 #reduce feature map size
             nn.Conv2d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2),  # 320 -> 160
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),  # 160 -> 80
         )
 
         # Decoder
         self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(64, 32, kernel_size=2, stride=2),  # 80 -> 160, # this double the size
+            nn.ReLU(),
             nn.ConvTranspose2d(32, 16, kernel_size=2, stride=2),  # 160 -> 320
             nn.ReLU(),
-            nn.ConvTranspose2d(16, num_classes, kernel_size=2, stride=2),  # 320 -> 640
+            nn.ConvTranspose2d(16, num_classes, kernel_size=2, stride=2),  # 320 -> 640 # back to original image format
         )
         
         self.device='cuda' if torch.cuda.is_available() else 'cpu'
@@ -134,15 +139,29 @@ class ConvNet(nn.Module):
         criterion=nn.CrossEntropyLoss()
         loss=criterion(y,target)
         return loss
+    
+    #Intersection over Union (IoU) metrics to measure performance of the model
+    def compute_iou(self,prediction, target, num_classes):
+        ious=[]
+        prediction = torch.argmax(prediction, dim=1) #[B, H, W]
+        for cls in range(num_classes):
+            pred_inds = (prediction == cls)
+            target_inds = (target == cls)
+            intersection = (pred_inds & target_inds).sum().item()
+            union = (pred_inds | target_inds).sum().item()
+            if union == 0:
+                ious.append(float('nan'))
+            else:
+                ious.append(intersection/union)
+        return np.nanmean(ious)    
 
-    def train_model(self, num_epochs=300, lr=0.01):
+    def train_model(self, num_epochs=200, lr=0.01):
         writer=SummaryWriter(log_dir=r'runs\segmentation'+datetime.datetime.today().strftime('%Y-%m-%d-%h_%H-%M-%S'))
         
         dataloader=DataLoader(self.train_dataset,batch_size=64, shuffle=True)
         dataloader_validation=DataLoader(self.validation_dataset,batch_size=64)       
         
         optimizer= torch.optim.Adam(self.parameters(),lr=lr) #self.parameters reefers to the whole list of parameters of the model
-        criterion = nn.CrossEntropyLoss()
         # loading tensor into GPU is available
         device=self.device
         self=self.to(device=device)
@@ -168,16 +187,18 @@ class ConvNet(nn.Module):
                     val_images, val_masks = val_images.to(device), val_masks.to(device)
                     val_outputs=self.forward(val_images)
                     loss_val=self.lossfunction(val_outputs, val_masks)
+                    iou=self.compute_iou(val_outputs, val_masks, NUM_CLASSES)
 
             writer.add_scalar("Loss/val",loss_val.item(),epoch)
+            writer.add_scalar("IoU/val", iou, epoch)
 
             print(f"Epoch {epoch+1}/{num_epochs} | Train Loss {loss:.4f} | Val Loss {loss_val:.4f}")
 
     def save_model(self):
-        torch.save(self.state_dict(),"ConvNet1.pth")
+        torch.save(self.state_dict(),"ConvNet2.pth")
 
 if __name__ == '__main__':
-    NUM_CLASSES = len(COCO('data\\corrobot.v2i.coco-segmentation\\train\\_annotations.coco.json').getCatIds()) + 1
+    NUM_CLASSES = len(COCO('data\\corrobot.v2i.coco-segmentation\\train\\_annotations.coco.json').getCatIds())
     print("NUM_CLASSES : ",NUM_CLASSES)
     transform = transforms.Compose([
     transforms.Resize((256, 256)),

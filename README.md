@@ -4,7 +4,7 @@ Developed competences : UNET architecture, pytorch (train, save, load, optimize,
 
 For the moment the UNET model is a look alike UNET model. It does not convey information between the encoder and decoder layers. It should be tried to improve model performance.
 
-## Ideation
+## Ideations
 UNET segmentation + inference on videos
 
 - [Corrosion_Rust dataset](https://huggingface.co/datasets/BinKhoaLe1812/Corrosion_Rust) : labels
