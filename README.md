@@ -4,6 +4,8 @@ Developed competences : UNET architecture, pytorch (train, save, load, optimize,
 
 For the moment the UNET model is a look alike UNET model. It does not convey information between the encoder and decoder layers. It should be tried to improve model performance.
 
+![alt text](image-5.png)
+
 ## Ideations
 UNET segmentation + inference on videos
 
@@ -11,6 +13,7 @@ UNET segmentation + inference on videos
 - [Corrobot dataset](https://universe.roboflow.com/corrosionbot619/corrobot/dataset/2) : segmentation
 
 0. Train 2 models : simple classifier (Corrosion : Yes / NO) and a UNET segmentation mask using the dataset above
+
 Tensorboard monitoring messed up to be fixed
 ![alt text](image-3.png)
 0. bis Improve model performance
@@ -25,10 +28,12 @@ Here a snippet of how the model performs currently
 
 4. Reconstruct the whole frame
 5. Display frame result as a layer on the video
-6. Build a GUI around the results
-7. Reconstrust a 3D Model
+6. Make sure everything runs on GPU
 
-## TODO
+
+## TODO or Future ideas
 
 0. Dockerize everything
-
+1. Build a GUI around the results
+2. Reconstrust a 3D Model
+3. Try to use Rust for faster inference on video. Possible to load pytorch model in Rust? We may need to retrain the model.
