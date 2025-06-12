@@ -9,24 +9,24 @@ import os
 
 
 # Tensorboard
-from torch.utils.tensorboard import SummaryWriter ## criter for tensorboard
+from torch.utils.tensorboard import SummaryWriter ## writer for tensorboard
 import torchvision.utils as vutils ## to visualize feature map
 
 # Torvision
-from torchvision import transforms
+from torchvision import transforms ## functions to apply standar transformation to PIL Image and conver it to tensor
 
 # Dataset and Dataloader
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data import DataLoader
 
-writer=SummaryWriter(log_dir='runs')
+writer=SummaryWriter(log_dir='runs') ## there is a bug here it creates too many logs files
 
 
 class CocoLoader(Dataset):
-    def __init__(self,root,annFile, transform=None, target_transform=None):
+    def __init__(self,root,annFile, transform=None, target_transform=None): ## COCO class needs a root folder and an annotation file 
         self.root=root
         self.coco = COCO(annFile)
-        self.image_ids = list(self.coco.imgs.keys())
+        self.image_ids = list(self.coco.imgs.keys()) # in json key, value
         self.transform = transform
         self.target_transform = target_transform
     
@@ -65,18 +65,24 @@ class SimpleNet(nn.Module):
     """
     def __init__(self):
         super(SimpleNet,self).__init__()
-        self.fc1=nn.Linear(4,5)
+        self.convolution=nn.Conv2d(in_channels=1,out_channels=32,kernel_size=3, stride=1, padding=1)
+        self.pool = nn.AdaptiveAvgPool2d((1,1))
+        self.fc1=nn.Linear(32,16) #[B, features]
         self.relu=nn.ReLU()
-        self.fc2=nn.Linear(5,3)
+        self.fc2=nn.Linear(16,1)
 
     def forward(self,x):
+        x=self.convolution(x) # [B, C, H, W ]
+        x=self.relu(x)
+        x=self.pool(x)
+        x=x.view(x.size(0),-1)
         x=self.fc1(x)
         x=self.relu(x)
         x=self.fc2(x)
         return x
     
     def lossfunction(self,y,target): # we usually do not put the loss and optimizer in the class but in the main loop
-        criterion=nn.CrossEntropyLoss() #do not apply softmax berfore feeding output to crossEntropy, targets must be classes (not one encoded)
+        criterion=nn.BCEWithLogitsLoss() #do not apply softmax berfore feeding output to crossEntropy, targets must be classes (not one encoded)
         loss=criterion(y,target)
         return loss
     
@@ -104,24 +110,24 @@ class ConvNet(nn.Module):
 
         # Encoder
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, padding=1), #padding =1 keeps the dimension of original image
+            nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, padding=1), #padding =1 keeps the dimension of original image, non square kernels may help to detect horizontal and vertical lines (not useful in this case)
             nn.ReLU(), #breaks linearity
-            nn.MaxPool2d(2),  # 640 -> 320 #reduce feature map size
-            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.MaxPool2d(kernel_size=2),  # 640 -> 320 #reduce feature map size
+            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(2),  # 320 -> 160
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.MaxPool2d(kernel_size=2),  # 320 -> 160
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(2),  # 160 -> 80
+            nn.MaxPool2d(kernel_size=2),  # 160 -> 80
         )
 
         # Decoder
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(64, 32, kernel_size=2, stride=2),  # 80 -> 160, # this double the size
+            nn.ConvTranspose2d(in_channels=64, out_channels=32, kernel_size=2, stride=2),  # 80 -> 160, # this double the size
             nn.ReLU(),
-            nn.ConvTranspose2d(32, 16, kernel_size=2, stride=2),  # 160 -> 320
+            nn.ConvTranspose2d(in_channels=32, out_channels=16, kernel_size=2, stride=2),  # 160 -> 320
             nn.ReLU(),
-            nn.ConvTranspose2d(16, num_classes, kernel_size=2, stride=2),  # 320 -> 640 # back to original image format
+            nn.ConvTranspose2d(in_channels=16, out_channels=num_classes, kernel_size=2, stride=2),  # 320 -> 640 # back to original image format
         )
         
         self.device='cuda' if torch.cuda.is_available() else 'cpu'
