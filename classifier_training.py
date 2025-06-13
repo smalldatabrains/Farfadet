@@ -25,21 +25,28 @@ writer=SummaryWriter(log_dir='runs') ## there is a bug here it creates too many 
 
 class CorrosionLabel(Dataset):
     def __init__(self, transform=None):
-        self.dataset = load_dataset("BinKhoaLe1812/Corrosion_Rust", split='train', cache_dir="./data")
+        self.dataset = load_dataset("BinKhoaLe1812/Corrosion_Rust", split='train', cache_dir="\\data")
         self.transform = transform
     
+    def save_images(self):
+        folder='\\data\\corrosion.classifier'
+        for i, item in enumerate(self.dataset):
+            image=item['image']
+            label=item['label']
+        #save image to train folder
+        #stack labels and save to csv
+
+
     def __len__(self):
         print(self.dataset)
         return len(self.dataset)
         
 
     def __getitem__(self, idx):
-        item=self.dataset[idx]
+        image=self.dataset[idx]['image']
+        label=self.dataset[idx]['label']
 
-        if self.transform:
-            image=self.transform(image)
-
-        return item
+        return image,label
 
 
 class SimpleNet(nn.Module):
@@ -86,6 +93,7 @@ class SimpleNet(nn.Module):
 
 if __name__=="__main__":
     dataset=CorrosionLabel()
-    print(len(dataset))
-    idx=dataset.__getitem__(0)
-    print(idx)
+    print("Dataset lenght:", len(dataset))
+    image, label = dataset.__getitem__(470)
+    print("Label is :", label)
+    image.show()
