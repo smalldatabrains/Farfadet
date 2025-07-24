@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 
 class ImageDataset():
     def __init__(self):
-        self.ds=load_dataset('parquet', data_files='data\\data\\train.parquet',split='train')
+        self.ds=load_dataset('parquet', data_files='data\\ADE20k\\data\\train-00000-of-00003-1585317f38abff1b.parquet',split='train')
         print("Classes are : ")
         print(self.ds.info.features)
         self.transform = transforms.Compose([
@@ -65,8 +65,21 @@ class ImageDataset():
 
 class PatchEmbedding(nn.Module):
     # apply convolution to the patch
-    def __init__(self, in_channels=3, out_channels=3, patch_size=16):
+    def __init__(self, in_channels=3, out_channels=3, patch_size=16, embedding_size=760):
         super(PatchEmbedding,self).__init__()
+        self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=patch_size, stride=patch_size) # (B, out_channels, 14, 14), 196 patches
+        self.flatten = nn.Flatten(2) # (B, out_channels, 196)
+        self.linear = nn.Linear(out_channels, embedding_size) # (B, 196, embedding_size)
+        # encode patch order /position
+        self.position_embeddings = nn.Parameter(torch.randn(size=(1, 196, embedding_size)), requires_grad=True) # learnable weight (1, 196, embedding_size)
+
+    def forward(self,x):
+        x = self.conv(x)
+        x = self.flatten(x).permute(0,2,1)
+        x = self.linear(x)
+        x = self.position_embeddings + x
+        return x
+
 
 class TransformerBlock(nn.Module):
     def __init__(self, embed_size, num_heads, mlp_dim):
@@ -86,18 +99,13 @@ class VITSegmentor(nn.Module):
     def __init__(self, num_classes):
         super(VITSegmentor,self).__init__()
 
-        self.encoder = nn.Sequential(
-
-        )
-
-        self.decoder = nn.Sequential(
-            nn.Conv2d(64, num_classes, kernel_size=1),
-            nn.Linear()
+        self.Vit = nn.Sequential(
+            PatchEmbedding(),
+            TransformerBlock()
         )
 
     def forward(self,x):
-        x = self.encoder(x)
-        x = self.decoder(x)
+        x = self.Vit(x)
         return x
     
 if __name__ == "__main__":
