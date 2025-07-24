@@ -135,6 +135,9 @@ if __name__ == "__main__":
 
             outputs = model(inputs)
             loss_value = loss(outputs,targets)
+
+            optimizer.zero_grad()
+            loss_value.backward()
             optimizer.step()
 
         writer.add_scalar("Loss / train", loss_value.item(), epoch)
