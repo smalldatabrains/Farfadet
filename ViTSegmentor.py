@@ -167,4 +167,4 @@ if __name__ == "__main__":
         if epoch % 2 == 0:
             print("Epoch ", epoch, " Loss ", loss_value.item())
         
-            torch.save(model.state_dict(),'model\\vit_segmentation_epoch_',epoch,'.pth')
+            torch.save(model.state_dict(),'model\\vit_segmentation_epoch_'+epoch+'.pth')
