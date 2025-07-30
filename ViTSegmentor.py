@@ -20,6 +20,7 @@ from datasets import load_dataset, get_dataset_split_names # huggingface library
 from torchvision import transforms
 
 import matplotlib.pyplot as plt
+import json
 
 class ImageDataset():
     def __init__(self):
@@ -27,9 +28,13 @@ class ImageDataset():
         print("Classes are : ")
         print(self.ds.info.features)
         self.transform = transforms.Compose([
-            transforms.Resize((28,28)),
+            transforms.Resize((224,224)),
             transforms.ToTensor(),
         ])
+        with open('data\\ADE20k\\object_id2label.json') as json_data:
+            self.classes = json.load(json_data)
+        self.NUM_CLASSES = len(self.classes)
+        print('There are ', self.NUM_CLASSES, " different classes")
 
     def get_split_names(self):
         return get_dataset_split_names(self.ds)
@@ -42,8 +47,10 @@ class ImageDataset():
         mask =self.ds[idx]["annotated"]
 
         image = self.transform(image)
-        mask = transforms.Resize((28,28), interpolation=transforms.InterpolationMode.NEAREST)(mask)
+        mask = transforms.Resize((224,224), interpolation=transforms.InterpolationMode.NEAREST)(mask)
         mask = torch.from_numpy(np.array(mask)).long()
+
+        mask = mask -1
 
         return image, mask
     
@@ -65,7 +72,7 @@ class ImageDataset():
 
 class PatchEmbedding(nn.Module):
     # apply convolution to the patch
-    def __init__(self, in_channels=3, out_channels=3, patch_size=16, embedding_size=760):
+    def __init__(self, in_channels=3, out_channels=64, patch_size=16, embedding_size=768):
         super(PatchEmbedding,self).__init__()
         self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=patch_size, stride=patch_size) # (B, out_channels, 14, 14), 196 patches
         self.flatten = nn.Flatten(2) # (B, out_channels, 196)
@@ -82,18 +89,33 @@ class PatchEmbedding(nn.Module):
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, embed_size, num_heads, mlp_dim):
+    def __init__(self, embedding_size=768, num_heads=3, num_classes=150):
         super(TransformerBlock,self).__init__()
 
-        self.transformer = nn.Sequential(
-            nn.MultiheadAttention(embed_dim=embed_size, num_heads=num_heads),
-            nn.Linear(embed_size, mlp_dim),
+        self.encoder_block = nn.TransformerEncoderLayer(d_model=embedding_size, nhead=num_heads)
+        self.mlp_head = nn.Sequential(
+            nn.Linear(embedding_size, 384),
             nn.GELU(),
-            nn.Linear(mlp_dim, embed_size)
+            nn.Linear(384, num_classes)
+        )
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(num_classes,num_classes, kernel_size=2,stride=2),
+            nn.ReLU(),
+            nn.ConvTranspose2d(num_classes,num_classes, kernel_size=2,stride=2),
+            nn.ReLU(),
+            nn.ConvTranspose2d(num_classes,num_classes, kernel_size=2,stride=2),
+            nn.ReLU(),
+            nn.ConvTranspose2d(num_classes,num_classes,kernel_size=2, stride=2)
         )
 
     def forward(self,x):   
-        return self.transformer(x)
+        x = self.encoder_block(x)
+        x = self.mlp_head(x)
+        B, N, C = x.shape
+        H = W = int(N ** 0.5)
+        x = x.permute(0, 2, 1).reshape(B, C, H, W)
+        x = self.decoder(x)
+        return x
     
 class VITSegmentor(nn.Module):
     def __init__(self, num_classes):
@@ -122,15 +144,15 @@ if __name__ == "__main__":
     dataset.show_image_mask(0)
     dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
 
-    model = VITSegmentor(num_classes=1200).to(device)
+    model = VITSegmentor(num_classes=150).to(device)
 
     # training loop
-    loss = CrossEntropyLoss()
+    loss = CrossEntropyLoss(ignore_index=-1)
     optimizer = Adam(model.parameters())
 
-    for epoch in range(100):
+    for epoch in range(10):
         for inputs, targets in dataloader:
-            input = inputs.to(device)
+            inputs = inputs.to(device)
             targets = targets.to(device)
 
             outputs = model(inputs)
@@ -144,3 +166,5 @@ if __name__ == "__main__":
 
         if epoch % 10 == 0:
             print("Epoch ", epoch, " Loss ", loss_value.item())
+        
+    torch.save(model.state_dict(),'model\\vit_segmentation.pth')
