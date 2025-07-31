@@ -1,4 +1,6 @@
 /data
 /runs
 /model
+/__pycache__
 *.pth
+*.pyc

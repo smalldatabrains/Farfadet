@@ -148,7 +148,7 @@ if __name__ == "__main__":
 
     # training loop
     loss = CrossEntropyLoss(ignore_index=-1)
-    optimizer = Adam(model.parameters())
+    optimizer = Adam(model.parameters(),lr=0.01)
 
     for epoch in range(100):
         for inputs, targets in dataloader:

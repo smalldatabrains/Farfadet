@@ -5,7 +5,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 model = VITSegmentor(num_classes=150).to(device)
-model.load_state_dict(torch.load('model\\vit_segmentation.pth', map_location='cuda' if torch.cuda.is_available() else 'cpu'))
+model.load_state_dict(torch.load('model\\vit_segmentation_epoch_12.pth', map_location='cuda' if torch.cuda.is_available() else 'cpu'))
 model.eval()
 
 from PIL import Image
