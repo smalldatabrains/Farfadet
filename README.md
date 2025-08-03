@@ -30,6 +30,15 @@ Here a snippet of how the model performs currently
 5. Display frame result as a layer on the video
 6. Make sure everything runs on GPU
 
+## VitSegmentation
+
+[VitSegmentor](ViTSegmentor.py) is an attempt to segment teeth using transformer models. Sequence in our case is a sequence of patches representing our original input image. Dataset is made of [Teeth segemention](https://huggingface.co/datasets/vimassaru/teethsegmentation) from hugging face. It has a limited quantity of data.
+
+Training set
+![alt text](image-7.png)
+
+Prediction
+![alt text](image-6.png)
 
 ## TODO or Future ideas
 
