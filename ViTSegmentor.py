@@ -24,14 +24,14 @@ import json
 
 class ImageDataset():
     def __init__(self):
-        self.ds=load_dataset('parquet', data_files='data\\ADE20k\\data\\train-00000-of-00003-1585317f38abff1b.parquet',split='train')
+        self.ds=load_dataset('parquet', data_files='data\\teeth\data\\train-00000-of-00001-ba8a50c051c9a793.parquet',split='train')
         print("Classes are : ")
         print(self.ds.info.features)
         self.transform = transforms.Compose([
             transforms.Resize((224,224)),
             transforms.ToTensor(),
         ])
-        with open('data\\ADE20k\\object_id2label.json') as json_data:
+        with open('data\\teeth\data\\teeth_label.json') as json_data:
             self.classes = json.load(json_data)
         self.NUM_CLASSES = len(self.classes)
         print('There are ', self.NUM_CLASSES, " different classes")
@@ -44,19 +44,17 @@ class ImageDataset():
     
     def __getitem__(self, idx):
         image=self.ds[idx]["image"].convert("RGB")
-        mask =self.ds[idx]["annotated"]
+        mask =self.ds[idx]["label"]
 
         image = self.transform(image)
         mask = transforms.Resize((224,224), interpolation=transforms.InterpolationMode.NEAREST)(mask)
         mask = torch.from_numpy(np.array(mask)).long()
 
-        mask = mask -1
-
         return image, mask
     
     def show_image_mask(self, idx):
         image = self.ds[idx]["image"]
-        mask = self.ds[idx]["annotated"]
+        mask = self.ds[idx]["label"]
         fig, axs = plt.subplots(1, 2, figsize=(10, 5))
         axs[0].imshow(image)
         axs[0].set_title('Image')
@@ -118,12 +116,12 @@ class TransformerBlock(nn.Module):
         return x
     
 class VITSegmentor(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes=2):
         super(VITSegmentor,self).__init__()
 
         self.Vit = nn.Sequential(
             PatchEmbedding(),
-            TransformerBlock()
+            TransformerBlock(num_classes=num_classes)
         )
 
     def forward(self,x):
@@ -144,13 +142,13 @@ if __name__ == "__main__":
     dataset.show_image_mask(0)
     dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
 
-    model = VITSegmentor(num_classes=150).to(device)
+    model = VITSegmentor(num_classes=33).to(device)
 
     # training loop
     loss = CrossEntropyLoss(ignore_index=-1)
-    optimizer = Adam(model.parameters(),lr=0.01)
+    optimizer = Adam(model.parameters(),lr=0.0001)
 
-    for epoch in range(100):
+    for epoch in range(1000):
         for inputs, targets in dataloader:
             inputs = inputs.to(device)
             targets = targets.to(device)
@@ -164,7 +162,7 @@ if __name__ == "__main__":
 
         writer.add_scalar("Loss / train", loss_value.item(), epoch)
 
-        if epoch % 2 == 0:
+        if epoch % 100 == 0:
             print("Epoch ", epoch, " Loss ", loss_value.item())
         
             torch.save(model.state_dict(),'model\\vit_segmentation_epoch_'+str(epoch)+'.pth')
