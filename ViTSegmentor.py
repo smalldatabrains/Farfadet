@@ -146,9 +146,9 @@ if __name__ == "__main__":
 
     # training loop
     loss = CrossEntropyLoss(ignore_index=-1)
-    optimizer = Adam(model.parameters(),lr=0.0001)
+    optimizer = Adam(model.parameters(),lr=0.00007)
 
-    for epoch in range(2000):
+    for epoch in range(10000):
         for inputs, targets in dataloader:
             inputs = inputs.to(device)
             targets = targets.to(device)
@@ -162,7 +162,7 @@ if __name__ == "__main__":
 
         writer.add_scalar("Loss / train", loss_value.item(), epoch)
 
-        if epoch % 100 == 0:
+        if epoch % 500 == 0:
             print("Epoch ", epoch, " Loss ", loss_value.item())
         
             torch.save(model.state_dict(),'model\\vit_segmentation_epoch_'+str(epoch)+'.pth')
