@@ -11,7 +11,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Load model
 model = VITSegmentor(num_classes=33).to(device)
-model.load_state_dict(torch.load('model\\vit_segmentation_epoch_9500.pth', map_location=device))
+model.load_state_dict(torch.load('model\\vit_segmentation_epoch_4000.pth', map_location=device))
 model.eval()
 
 # Load and preprocess image
