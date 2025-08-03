@@ -40,6 +40,11 @@ Training set
 Prediction
 ![alt text](image-6.png)
 
+Ideas to improve the ViTsegmentor model:
+- improve decoder part using UNET architecture
+- add skip connections (similar to unet architecture)
+- reduce patch size
+
 ## TODO or Future ideas
 
 0. Dockerize everything

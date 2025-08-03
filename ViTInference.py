@@ -20,7 +20,7 @@ image = Image.open(image_path).convert("RGB")
 original_size = image.size  # Save original (W, H)
 
 transform = transforms.Compose([
-    transforms.Resize((224, 224)),
+    transforms.Resize((512, 512)),
     transforms.ToTensor()
 ])
 input_tensor = transform(image).unsqueeze(0).to(device)

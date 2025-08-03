@@ -28,7 +28,7 @@ class ImageDataset():
         print("Classes are : ")
         print(self.ds.info.features)
         self.transform = transforms.Compose([
-            transforms.Resize((224,224)),
+            transforms.Resize((512,512)),
             transforms.ToTensor(),
         ])
         with open('data\\teeth\\data\\teeth_label.json') as json_data:
@@ -47,7 +47,7 @@ class ImageDataset():
         mask =self.ds[idx]["label"]
 
         image = self.transform(image)
-        mask = transforms.Resize((224,224), interpolation=transforms.InterpolationMode.NEAREST)(mask)
+        mask = transforms.Resize((512,512), interpolation=transforms.InterpolationMode.NEAREST)(mask)
         mask = torch.from_numpy(np.array(mask)).long()
 
         return image, mask
@@ -76,7 +76,7 @@ class PatchEmbedding(nn.Module):
         self.flatten = nn.Flatten(2) # (B, out_channels, 196)
         self.linear = nn.Linear(out_channels, embedding_size) # (B, 196, embedding_size)
         # encode patch order /position
-        self.position_embeddings = nn.Parameter(torch.randn(size=(1, 196, embedding_size)), requires_grad=True) # learnable weight (1, 196, embedding_size)
+        self.position_embeddings = nn.Parameter(torch.randn(size=(1, 1024, embedding_size)), requires_grad=True) # learnable weight (1, 196, embedding_size)
 
     def forward(self,x):
         x = self.conv(x)
