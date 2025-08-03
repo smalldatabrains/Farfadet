@@ -31,7 +31,7 @@ class ImageDataset():
             transforms.Resize((224,224)),
             transforms.ToTensor(),
         ])
-        with open('data\\teeth\data\\teeth_label.json') as json_data:
+        with open('data\\teeth\\data\\teeth_label.json') as json_data:
             self.classes = json.load(json_data)
         self.NUM_CLASSES = len(self.classes)
         print('There are ', self.NUM_CLASSES, " different classes")
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     loss = CrossEntropyLoss(ignore_index=-1)
     optimizer = Adam(model.parameters(),lr=0.0001)
 
-    for epoch in range(1000):
+    for epoch in range(2000):
         for inputs, targets in dataloader:
             inputs = inputs.to(device)
             targets = targets.to(device)
